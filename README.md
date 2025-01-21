@@ -12,8 +12,8 @@ This repository is a framework for the registration and segmentation of image pa
 
 ## Setup
 ```python
-cd Patch-Based-Material-Characterization
-conda env create --name pbcnn --file=environments.yml
+cd PBMC
+conda env create --name pbmc --file=environments.yml
 ```
 ## Train PBCNN Models
 ```python
