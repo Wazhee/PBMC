@@ -15,4 +15,14 @@ This repository is a framework for the registration and segmentation of image pa
 cd Patch-Based-Material-Characterization
 conda env create --name pbcnn --file=environments.yml
 ```
+## Train PBCNN Models
+```python
+cd script
+# Train Patch-Based U-Net
+python main.py -model unet -loss dice -early_stopping True -augmentation True
+# Train Patch-Based Attention U-Net
+python main.py -model attention -loss dice -early_stopping True -augmentation True
+# Train Patch-Based Residual U-Net
+python main.py -model residual -loss dice -early_stopping True -augmentation True
+```
 
