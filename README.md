@@ -27,7 +27,7 @@ python main.py -model residual -epochs 100 -gpu 0
 ```
 
 ## Cite this work
-Wang et al, [*Fine Pore Segmentation with Deep Neural Networks*](https://www.nature.com/articles/s41598-023-48800-3), MIDL 2024.
+Wang et al, [*Fine Pore Segmentation with Deep Neural Networks*](https://www.nature.com/articles/s41598-023-48800-3), Scientific Reports 2023.
 ```
 @article{wang2023fine,
   title={A fine pore-preserved deep neural network for porosity analytics of a high burnup U-10Zr metallic fuel},
