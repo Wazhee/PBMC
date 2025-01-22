@@ -144,9 +144,9 @@ def categorical_focal_loss(gamma=2.0, alpha=0.25):
 
 focal_loss = categorical_focal_loss(alpha=[[.15, .15, .25, .15, .15, .25]])
 
-def create_csv(scores,slicex):
+def create_csv(scores,slicex,save_dir):
     """create and initialize save directories"""
-    csv_savepath = "../results/LOOCV_unet_5000plus/"
+    csv_savepath = f"../results/{save_dir}"
     if os.path.exists(csv_savepath) == False:
         os.makedirs(csv_savepath)
     df = pd.DataFrame.from_dict(scores) # convert dictionary to dataframe

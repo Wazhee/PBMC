@@ -68,28 +68,86 @@ def train_unet(args):
 
         scores = performance_evaluation(model, X_test, y_test, n_classes, scores,idx,save_dir) # calculate results
         # save results of K-fold validation
-        create_csv(scores, idx)
+        create_csv(scores, idx, save_dir)
         # save model
         model.save(f"{model_savepath}{args.model}.hdf5")
         print("Model successfully trained and saved!")
 
-def train_attention(n_classes, IMG_HEIGHT, IMG_WIDTH, IMG_CHANNELS ):
-    def get_model():
-        return attention_unet(n_classes=n_classes, IMG_HEIGHT=IMG_HEIGHT, IMG_WIDTH=IMG_WIDTH, IMG_CHANNELS=IMG_CHANNELS)
-    # start training
-    scores, iou_list, acc_list = {},[],[]
-    # initialize model
-    model = get_model()
-#     model.compile(optimizer='adam', loss=LOSS, metrics=['accuracy']) 
+def train_attention():
+    save_dir = f"EPOCHS{args.epochs}_{args.model.upper()}_{args.loss}_es{args.early_stopping}_aug{args.augment}/"
+    model_savepath,model_checkpoint = f"../results/models/{save_dir}/", "../results/checkpoints"
+    BATCHSIZE, EPOCHS = 16, args.epochs
+    if args.loss2 is not None:
+        LOSS = [get_loss(args.loss), get_loss(args.loss2)]
+    else:
+        LOSS = get_loss(args.loss) # if 
     
-def train_residual(n_classes, IMG_HEIGHT, IMG_WIDTH, IMG_CHANNELS):
-    def get_model():
-        return residual_unet(n_classes=n_classes, IMG_HEIGHT=IMG_HEIGHT, IMG_WIDTH=IMG_WIDTH, IMG_CHANNELS=IMG_CHANNELS)
-    # start training
-    scores, iou_list, acc_list = {},[],[]
-    # initialize model
-    model = get_model()
-#     model.compile(optimizer='adam', loss=LOSS, metrics=['accuracy']) 
+    for idx in tqdm(range(1)):
+        X_train,X_val,X_test,y_train,y_val,y_test,y_train_cat,y_val_cat,y_test_cat = create_dataset(idx)
+        print(f"X_train.shape: {X_train.shape}, X_val.shape: {X_val.shape}, X_test.shape: {X_test.shape}")
+        IMG_HEIGHT,IMG_WIDTH,IMG_CHANNELS = X_train.shape[1],X_train.shape[2],X_train.shape[3]
+        def get_model():
+            return attention_unet(n_classes=n_classes, IMG_HEIGHT=IMG_HEIGHT, IMG_WIDTH=IMG_WIDTH, IMG_CHANNELS=IMG_CHANNELS)
+        # start training
+        scores, iou_list, acc_list = {},[],[]
+        # initialize model
+        model = get_model()
+        model.compile(optimizer='adam', loss=LOSS, metrics=['accuracy'])  
+
+        early_stopping = EarlyStopping(monitor='val_loss', patience=30, restore_best_weights=True) # implement early_stopping mechanism
+        history = model.fit(X_train, y_train_cat, 
+                            batch_size = BATCHSIZE, 
+                            verbose=2, 
+                            epochs=EPOCHS, 
+                            validation_data=(X_val, y_val_cat), 
+                            callbacks=[early_stopping],
+                            #class_weight=class_weights,
+                            shuffle=True)
+
+        scores = performance_evaluation(model, X_test, y_test, n_classes, scores,idx,save_dir) # calculate results
+        # save results of K-fold validation
+        create_csv(scores, idx, save_dir)
+        # save model
+        model.save(f"{model_savepath}{args.model}.hdf5")
+        print("Model successfully trained and saved!")
+    
+def train_residual():
+    save_dir = f"EPOCHS{args.epochs}_{args.model.upper()}_{args.loss}_es{args.early_stopping}_aug{args.augment}/"
+    model_savepath,model_checkpoint = f"../results/models/{save_dir}/", "../results/checkpoints"
+    BATCHSIZE, EPOCHS = 16, args.epochs
+    if args.loss2 is not None:
+        LOSS = [get_loss(args.loss), get_loss(args.loss2)]
+    else:
+        LOSS = get_loss(args.loss) # if 
+    
+    for idx in tqdm(range(1)):
+        X_train,X_val,X_test,y_train,y_val,y_test,y_train_cat,y_val_cat,y_test_cat = create_dataset(idx)
+        print(f"X_train.shape: {X_train.shape}, X_val.shape: {X_val.shape}, X_test.shape: {X_test.shape}")
+        IMG_HEIGHT,IMG_WIDTH,IMG_CHANNELS = X_train.shape[1],X_train.shape[2],X_train.shape[3]
+        def get_model():
+            return residual_unet(n_classes=n_classes, IMG_HEIGHT=IMG_HEIGHT, IMG_WIDTH=IMG_WIDTH, IMG_CHANNELS=IMG_CHANNELS)
+        # start training
+        scores, iou_list, acc_list = {},[],[]
+        # initialize model
+        model = get_model()
+        model.compile(optimizer='adam', loss=LOSS, metrics=['accuracy'])  
+
+        early_stopping = EarlyStopping(monitor='val_loss', patience=30, restore_best_weights=True) # implement early_stopping mechanism
+        history = model.fit(X_train, y_train_cat, 
+                            batch_size = BATCHSIZE, 
+                            verbose=2, 
+                            epochs=EPOCHS, 
+                            validation_data=(X_val, y_val_cat), 
+                            callbacks=[early_stopping],
+                            #class_weight=class_weights,
+                            shuffle=True)
+
+        scores = performance_evaluation(model, X_test, y_test, n_classes, scores,idx,save_dir) # calculate results
+        # save results of K-fold validation
+        create_csv(scores, idx, save_dir)
+        # save model
+        model.save(f"{model_savepath}{args.model}.hdf5")
+        print("Model successfully trained and saved!") 
 
 
 if __name__ == "__main__":
@@ -97,7 +155,7 @@ if __name__ == "__main__":
     if args.model == "unet":
         train_unet(args)
     elif args.model == "attention":
-        train_attention(n_classes, IMG_HEIGHT, IMG_WIDTH, IMG_CHANNELS )
+        train_attention()
     elif args.model == "residual":
-        train_residual(n_classes, IMG_HEIGHT, IMG_WIDTH, IMG_CHANNELS )
+        train_residual()
     
