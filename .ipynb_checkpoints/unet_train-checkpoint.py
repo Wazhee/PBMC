@@ -17,23 +17,7 @@ from scipy.ndimage import rotate
 import cv2
 from patchify import patchify
 from tqdm import tqdm
-
-parser = argparse.ArgumentParser()
-parser.add_argument('-train', action='store_true')
-parser.add_argument('-train_baseline', action='store_true')
-parser.add_argument('-model', default='densenet', choices=['densenet', 'resnet', 'inception'])
-parser.add_argument('-test_ds', default='rsna', choices=['rsna', 'mimic', 'cxpt'])
-parser.add_argument('-test', action='store_true')
-parser.add_argument('-analyze', action='store_true') # changed to automatically NOT run
-parser.add_argument('-augment', help='use augmented dataset', type=bool, default=False) 
-parser.add_argument('-gpu', help='specify which gpu to use', type=str, default="0") 
-parser.add_argument('-rate', default=0, choices=['0', '0.05', '0.10', '0.25', '0.50', '0.75', '1.00'])
-
-args = parser.parse_args()
-model = args.model
-test_ds = args.test_ds
-augmentation=args.augment
-
+from tqdm import tqdm
 
 
 # UNet model
@@ -106,82 +90,82 @@ def multi_unet_model(n_classes=6, IMG_HEIGHT=256, IMG_WIDTH=256, IMG_CHANNELS=1)
 
 
 
-#Define functions for each operation
-#Define seed for random to keep the transformation same for image and mask
+# #Define functions for each operation
+# #Define seed for random to keep the transformation same for image and mask
 
-# Make sure the order of the spline interpolation is 0, default is 3. 
-#With interpolation, the pixel values get messed up.
-def rotation(image, seed):
-    random.seed(seed)
-    angle= random.randint(-45,45)
-    r_img = rotate(image, angle, mode='wrap', reshape=False, order=0)
-    return r_img
+# # Make sure the order of the spline interpolation is 0, default is 3. 
+# #With interpolation, the pixel values get messed up.
+# def rotation(image, seed):
+#     random.seed(seed)
+#     angle= random.randint(-45,45)
+#     r_img = rotate(image, angle, mode='wrap', reshape=False, order=0)
+#     return r_img
 
-def h_flip(image, seed):
-    hflipped_img= np.fliplr(image)
-    return  hflipped_img
+# def h_flip(image, seed):
+#     hflipped_img= np.fliplr(image)
+#     return  hflipped_img
 
-def v_flip(image, seed):
-    vflipped_img= np.flipud(image)
-    return vflipped_img
+# def v_flip(image, seed):
+#     vflipped_img= np.flipud(image)
+#     return vflipped_img
 
-def v_transl(image, seed):
-    random.seed(seed)
-    n_pixels = random.randint(-128,128)
-    vtranslated_img = np.roll(image, n_pixels, axis=0)
-    return vtranslated_img
+# def v_transl(image, seed):
+#     random.seed(seed)
+#     n_pixels = random.randint(-128,128)
+#     vtranslated_img = np.roll(image, n_pixels, axis=0)
+#     return vtranslated_img
 
-def h_transl(image, seed):
-    random.seed(seed)
-    n_pixels = random.randint(-128,128)
-    htranslated_img = np.roll(image, n_pixels, axis=1)
-    return htranslated_img
-
-
+# def h_transl(image, seed):
+#     random.seed(seed)
+#     n_pixels = random.randint(-128,128)
+#     htranslated_img = np.roll(image, n_pixels, axis=1)
+#     return htranslated_img
 
 
-def get_filepaths(IMG_PATH="../datasets/FIB Tomography/images", MASK_PATH="../datasets/FIB Tomography/images"):
-    impaths,mkpaths=[],[] # to store paths of images from folder
-    for im in os.listdir(IMG_PATH):  # read image name from folder and append its path into "images" array     
-        impaths.append(os.path.join(IMG_PATH,im))
-    for msk in os.listdir(MASK_PATH):  # read image name from folder and append its path into "images" array     
-        mkpaths.append(os.path.join(MASK_PATH,msk))
-    impaths.sort()
-    mkpaths.sort()
-    print(f"{len(impaths)} Filepaths received")
-    return impaths,mkpaths
 
 
-idx = 0
-gpus = tf.config.list_physical_devices('GPU')
-if len(gpus) > 0: 
-    tf.config.experimental.set_visible_devices(gpus[idx], 'GPU')
+# def get_filepaths(IMG_PATH="../datasets/FIB Tomography/images", MASK_PATH="../datasets/FIB Tomography/images"):
+#     impaths,mkpaths=[],[] # to store paths of images from folder
+#     for im in os.listdir(IMG_PATH):  # read image name from folder and append its path into "images" array     
+#         impaths.append(os.path.join(IMG_PATH,im))
+#     for msk in os.listdir(MASK_PATH):  # read image name from folder and append its path into "images" array     
+#         mkpaths.append(os.path.join(MASK_PATH,msk))
+#     impaths.sort()
+#     mkpaths.sort()
+#     print(f"{len(impaths)} Filepaths received")
+#     return impaths,mkpaths
+
+
+# idx = 0
+# gpus = tf.config.list_physical_devices('GPU')
+# if len(gpus) > 0: 
+#     tf.config.experimental.set_visible_devices(gpus[idx], 'GPU')
 
     
     
 
-if __name__ == "__main__":
+# if __name__ == "__main__":
     
-# Leave-one-out-cross-validation experiment
-from tqdm import tqdm
-for idx in tqdm(range(1)):
-    X_train,X_val,X_test,y_train,y_val,y_test,y_train_cat,y_val_cat,y_test_cat = create_dataset(idx)
-    # start training
-    scores, iou_list, acc_list = {},[],[]
-    # initialize model
-    model = get_model()
-    model.compile(optimizer='adam', loss=LOSS, metrics=['accuracy'])  
+# # Leave-one-out-cross-validation experiment
 
-    early_stopping = EarlyStopping(monitor='val_loss', patience=10, restore_best_weights=True) # implement early_stopping mechanism
-    history = model.fit(X_train, y_train_cat, 
-                        batch_size = BATCHSIZE, 
-                        verbose=2, 
-                        epochs=EPOCHS, 
-                        validation_data=(X_val, y_val_cat), 
-                        callbacks=[early_stopping],
-                        #class_weight=class_weights,
-                        shuffle=False)
+# for idx in tqdm(range(1)):
+#     X_train,X_val,X_test,y_train,y_val,y_test,y_train_cat,y_val_cat,y_test_cat = create_dataset(idx)
+#     # start training
+#     scores, iou_list, acc_list = {},[],[]
+#     # initialize model
+#     model = get_model()
+#     model.compile(optimizer='adam', loss=LOSS, metrics=['accuracy'])  
+
+#     early_stopping = EarlyStopping(monitor='val_loss', patience=10, restore_best_weights=True) # implement early_stopping mechanism
+#     history = model.fit(X_train, y_train_cat, 
+#                         batch_size = BATCHSIZE, 
+#                         verbose=2, 
+#                         epochs=EPOCHS, 
+#                         validation_data=(X_val, y_val_cat), 
+#                         callbacks=[early_stopping],
+#                         #class_weight=class_weights,
+#                         shuffle=False)
     
-    scores = performance_evaluation(model, X_test, y_test, n_classes, scores,idx) # calculate results
-    # save results of K-fold validation
-    create_csv(scores, idx)
+#     scores = performance_evaluation(model, X_test, y_test, n_classes, scores,idx) # calculate results
+#     # save results of K-fold validation
+#     create_csv(scores, idx)
