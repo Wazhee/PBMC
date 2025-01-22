@@ -1,4 +1,4 @@
-# Patch-Based-Material-Characterization
+# PBMC: Patch Based Material Characterization
 This repository is a framework for the registration and segmentation of image pairs using patch-based convolutional neural networks
 
 <p align="center">
