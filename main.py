@@ -21,10 +21,9 @@ model = args.model
 gpus = tf.config.list_physical_devices('GPU')
 if len(gpus) > 0: 
     tf.config.experimental.set_visible_devices(gpus[args.gpu], 'GPU')
-
-
-def training_loop():
-# Leave-one-out-cross-validation experiment
+    
+        
+def train_unet(n_classes, IMG_HEIGHT, IMG_WIDTH, IMG_CHANNELS ):
     for idx in tqdm(range(65)):
         X_train,X_val,X_test,y_train,y_val,y_test,y_train_cat,y_val_cat,y_test_cat = create_dataset(idx)
         print(f"X_train.shape: {X_train.shape}, X_val.shape: {X_val.shape}, X_test.shape: {X_test.shape}")
@@ -50,17 +49,6 @@ def training_loop():
         scores = performance_evaluation(model, X_test, y_test, n_classes, scores,idx) # calculate results
     #     # save results of K-fold validation
         create_csv(scores, idx)
-        
-def train_unet(n_classes, IMG_HEIGHT, IMG_WIDTH, IMG_CHANNELS ):
-    def get_model():
-        return multi_unet_model(n_classes=n_classes, IMG_HEIGHT=IMG_HEIGHT, IMG_WIDTH=IMG_WIDTH, IMG_CHANNELS=IMG_CHANNELS)
-    # start training
-    scores, iou_list, acc_list = {},[],[]
-    # initialize model
-    model = get_model()
-    idx = 0
-    X_train,X_val,X_test,y_train,y_val,y_test,y_train_cat,y_val_cat,y_test_cat = create_dataset(idx)
-#     model.compile(optimizer='adam', loss=LOSS, metrics=['accuracy'])  
 
 def train_attention(n_classes, IMG_HEIGHT, IMG_WIDTH, IMG_CHANNELS ):
     def get_model():
@@ -82,8 +70,7 @@ def train_residual(n_classes, IMG_HEIGHT, IMG_WIDTH, IMG_CHANNELS):
 
 
 if __name__ == "__main__":
-    print(model, dataset, early_stopping)
-    n_classes, IMG_HEIGHT, IMG_WIDTH, IMG_CHANNELS = 6, 128, 256, 1
+    print(f"\n\nTraining {model.upper()} model on {dataset.upper()} dataset, w/ early stopping set to {early_stopping}...\n")
     if args.model == "unet":
         train_unet(n_classes, IMG_HEIGHT, IMG_WIDTH, IMG_CHANNELS )
     elif args.model == "attention":
