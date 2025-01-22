@@ -1,9 +1,13 @@
+import os
+import random
 from patchify import patchify
 from tqdm import tqdm
 from sklearn.preprocessing import LabelEncoder
 from tensorflow.keras.utils import normalize
 from sklearn.model_selection import KFold 
 from tensorflow.keras.utils import to_categorical
+import cv2
+import numpy as np
 
 n_classes = 6
 
@@ -109,8 +113,9 @@ def patchify_dataset(original_images,original_masks,test_images,test_masks):
             for y in range(len(image_patches[0])):
                 X_train.append(image_patches[x,y,:,:]);y_train.append(mask_patches[x,y,:,:]);
     print("Total: ", len(X_train)+len(X_test))
-    aug_images,aug_masks = get_augmented_images(X_train,y_train) # augment training images
-    X_train,y_train = np.array(X_train+aug_images), np.array(y_train+aug_masks)
+    #aug_images,aug_masks = get_augmented_images(X_train,y_train) # augment training images
+#     X_train,y_train = np.array(X_train+aug_images), np.array(y_train+aug_masks)
+    X_train,y_train = np.array(X_train), np.array(y_train)
     X_test,y_test = np.array(X_test),np.array(y_test)
     return X_train,X_test,y_train,y_test
 
@@ -202,3 +207,22 @@ def unpatchify(patches):
                 count += 1
     return tmp
 
+def create_dataset(number):
+    impaths,mkpaths = get_filepaths(IMG_PATH="../datasets/FIB Tomography/images", MASK_PATH="../datasets/FIB Tomography/Labels") # get paths to all files
+    original_images, original_masks = get_original_images(impaths,mkpaths) # get all original images
+    test_images,test_masks = [original_images[number]], [original_masks[number]]   # create train/test split
+    del original_images[number] # delete test images from training dataset
+    del original_masks[number]
+    X_train,X_test,y_train,y_test = patchify_dataset(original_images,original_masks,test_images,test_masks) # patchify
+    return get_trainvaltest_split(X_train,X_test,y_train,y_test)
+def create_dataset_no_patches(number):
+    impaths,mkpaths = get_filepaths(IMG_PATH="../datasets/FIB Tomography/images", MASK_PATH="../datasets/FIB Tomography/Labels") # get paths to all files
+    original_images, original_masks = get_original_images(impaths,mkpaths) # get all original images
+    test_images,test_masks = [original_images[number]], [original_masks[number]]   # create train/test split
+    del original_images[number] # delete test images from training dataset
+    del original_masks[number]
+    aug_images,aug_masks = get_augmented_images(original_images,original_masks)
+    train_images, train_masks = original_images+aug_images, original_masks+aug_masks # combine augmented and original images
+    X_train,y_train = np.array(train_images), np.array(train_masks)
+    X_test,y_test = np.array(test_images),np.array(test_masks)
+    return get_trainvaltest_split(X_train,X_test,y_train,y_test)
