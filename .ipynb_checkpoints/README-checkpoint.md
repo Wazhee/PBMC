@@ -15,6 +15,14 @@ This repository is a framework for the registration and segmentation of image pa
 cd PBMC
 conda env create --name pbmc --file=environments.yml
 ```
+
+## Recreate Our Results
+```python
+cd Internship\ Project/PBMC/
+conda activate tensorflow2.16.1
+python main.py -model unet -epochs 100 -gpu 0
+```
+
 ## Train PBCNN Models
 ```python
 cd script

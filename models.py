@@ -164,7 +164,7 @@ def residual_unet(n_classes=6, IMG_HEIGHT=256, IMG_WIDTH=256, IMG_CHANNELS=3):
 """
 Attention U-Net Model
 """
-def conv_block(x, num_filters):
+def conv_block2(x, num_filters):
     x = Conv2D(num_filters, (3, 3), activation='relu', padding="same")(x)
     x = BatchNormalization()(x)  # as mentioned in AttentionUNET paper
     x = Conv2D(num_filters, (3, 3), activation='relu', padding="same")(x)
@@ -172,7 +172,7 @@ def conv_block(x, num_filters):
     return x
 
 def encoder_block(x, num_filters):
-    x = conv_block(x, num_filters)
+    x = conv_block2(x, num_filters)
     p = MaxPooling2D((2, 2))(x)
     return x, p
 
@@ -192,7 +192,7 @@ def decoder_block(x, s, num_filters):
     x = UpSampling2D(interpolation="bilinear")(x)
     s = attention_gate(x, s, num_filters)
     x = concatenate([x, s])
-    x = conv_block(x, num_filters)
+    x = conv_block2(x, num_filters)
     return x
 
 def attention_unet(n_classes=6, IMG_HEIGHT=256, IMG_WIDTH=256, IMG_CHANNELS=1):
@@ -205,7 +205,7 @@ def attention_unet(n_classes=6, IMG_HEIGHT=256, IMG_WIDTH=256, IMG_CHANNELS=1):
     s3, p3 = encoder_block(p2, 64)
     s4, p4 = encoder_block(p3, 128)
  
-    b1 = conv_block(p4, 256)
+    b1 = conv_block2(p4, 256)
  
     """ Decoder """
     d1 = decoder_block(b1, s4, 128)
