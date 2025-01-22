@@ -15,6 +15,7 @@ parser.add_argument('-gpu', type=int, default=0, choices=[0, 1, 2, 3])
 parser.add_argument('-epochs', type=int, default=100)
 parser.add_argument('-loss', default='categorical_crossentropy', choices=['mae', 'mse', 'categorical_crossentropy', 'dice', 'focal'])
 parser.add_argument('-loss2', default=None, choices=['mae', 'mse', 'categorical_crossentropy', 'dice', 'focal'])
+parser.add_argument('-save_dir', default='models', choices=['unet', 'attention', 'residual'])
 
 args = parser.parse_args()
 dataset = args.dataset
@@ -35,14 +36,15 @@ def get_loss(loss, secondary_loss = None):
         return focal_loss
         
 def train_unet(args):
-    model_savepath,model_checkpoint = "../results/unet_models/", "../results/checkpoints"
+    save_dir = f"EPOCHS{args.epochs}_{args.model.upper()}_{args.loss}_es{args.early_stopping}_aug{args.augment}/"
+    model_savepath,model_checkpoint = f"../results/models/{save_dir}/", "../results/checkpoints"
     BATCHSIZE, EPOCHS = 16, args.epochs
     if args.loss2 is not None:
-        Loss = [get_loss(args.loss), get_loss(args.loss2)]
+        LOSS = [get_loss(args.loss), get_loss(args.loss2)]
     else:
         LOSS = get_loss(args.loss) # if 
     
-    for idx in tqdm(range(65)):
+    for idx in tqdm(range(1)):
         X_train,X_val,X_test,y_train,y_val,y_test,y_train_cat,y_val_cat,y_test_cat = create_dataset(idx)
         print(f"X_train.shape: {X_train.shape}, X_val.shape: {X_val.shape}, X_test.shape: {X_test.shape}")
         IMG_HEIGHT,IMG_WIDTH,IMG_CHANNELS = X_train.shape[1],X_train.shape[2],X_train.shape[3]
@@ -64,9 +66,12 @@ def train_unet(args):
                             #class_weight=class_weights,
                             shuffle=True)
 
-        scores = performance_evaluation(model, X_test, y_test, n_classes, scores,idx) # calculate results
-    #     # save results of K-fold validation
+        scores = performance_evaluation(model, X_test, y_test, n_classes, scores,idx,save_dir) # calculate results
+        # save results of K-fold validation
         create_csv(scores, idx)
+        # save model
+        model.save(f"{model_savepath}{args.model}.hdf5")
+        print("Model successfully trained and saved!")
 
 def train_attention(n_classes, IMG_HEIGHT, IMG_WIDTH, IMG_CHANNELS ):
     def get_model():
