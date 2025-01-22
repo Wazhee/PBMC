@@ -20,6 +20,7 @@ gpus = tf.config.list_physical_devices('GPU')
 if len(gpus) > 0: 
     tf.config.experimental.set_visible_devices(gpus[args.gpu], 'GPU')
 
+
 def training_loop():
 # Leave-one-out-cross-validation experiment
     for idx in tqdm(range(65)):
