@@ -12,6 +12,9 @@ parser.add_argument('-dataset', default='fib', choices=['fib'])
 parser.add_argument('-augment', action='store_true') # enable data augmentation
 parser.add_argument('-early_stopping', action='store_true') # enable early_stopping
 parser.add_argument('-gpu', type=int, default=0, choices=[0, 1, 2, 3])
+parser.add_argument('-epochs', type=int, default=100)
+parser.add_argument('-loss', default='categorical_crossentropy', choices=['mae', 'mse', 'categorical_crossentropy', 'dice', 'focal'])
+parser.add_argument('-loss2', default=None, choices=['mae', 'mse', 'categorical_crossentropy', 'dice', 'focal'])
 
 args = parser.parse_args()
 dataset = args.dataset
@@ -21,9 +24,24 @@ model = args.model
 gpus = tf.config.list_physical_devices('GPU')
 if len(gpus) > 0: 
     tf.config.experimental.set_visible_devices(gpus[args.gpu], 'GPU')
-    
+
+def get_loss(loss, secondary_loss = None):
+    specialty = {'focal': focal_loss, 'dice': dice_coef_loss}
+    if loss == 'mse' or loss == 'categorical_crossentropy' or loss == 'mae':
+        return loss
+    elif loss == 'dice':
+        return dice_coef_loss
+    elif loss == 'focal':
+        return focal_loss
         
-def train_unet(n_classes, IMG_HEIGHT, IMG_WIDTH, IMG_CHANNELS ):
+def train_unet(args):
+    model_savepath,model_checkpoint = "../results/unet_models/", "../results/checkpoints"
+    BATCHSIZE, EPOCHS = 16, args.epochs
+    if args.loss2 is not None:
+        Loss = [get_loss(args.loss), get_loss(args.loss2)]
+    else:
+        LOSS = get_loss(args.loss) # if 
+    
     for idx in tqdm(range(65)):
         X_train,X_val,X_test,y_train,y_val,y_test,y_train_cat,y_val_cat,y_test_cat = create_dataset(idx)
         print(f"X_train.shape: {X_train.shape}, X_val.shape: {X_val.shape}, X_test.shape: {X_test.shape}")
@@ -72,7 +90,7 @@ def train_residual(n_classes, IMG_HEIGHT, IMG_WIDTH, IMG_CHANNELS):
 if __name__ == "__main__":
     print(f"\n\nTraining {model.upper()} model on {dataset.upper()} dataset, w/ early stopping set to {early_stopping}...\n")
     if args.model == "unet":
-        train_unet(n_classes, IMG_HEIGHT, IMG_WIDTH, IMG_CHANNELS )
+        train_unet(args)
     elif args.model == "attention":
         train_attention(n_classes, IMG_HEIGHT, IMG_WIDTH, IMG_CHANNELS )
     elif args.model == "residual":
