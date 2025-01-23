@@ -23,6 +23,18 @@ conda activate tensorflow2.16.1
 python main.py -model unet -epochs 100 -gpu 0
 ```
 
+```python
+cd Internship\ Project/PBMC/
+conda activate tensorflow2.16.1
+python main.py -model attention -augment -epochs 100 -gpu 1
+```
+
+```python
+cd Internship\ Project/PBMC/
+conda activate tensorflow2.16.1
+python main.py -model residual -augment -epochs 100 -gpu 2
+```
+
 ## Train PBCNN Models
 ```python
 cd script

@@ -4,6 +4,7 @@ from tqdm import tqdm
 import tensorflow as tf
 from evaluate import *
 from dataset import *
+from clean_results import *
 
 parser = argparse.ArgumentParser()
 parser.add_argument('-train', action='store_true')
@@ -35,7 +36,7 @@ def get_loss(loss, secondary_loss = None):
     elif loss == 'focal':
         return focal_loss
         
-def train_unet(args):
+def train_unet():
     save_dir = f"EPOCHS{args.epochs}_{args.model.upper()}_{args.loss}_es{args.early_stopping}_aug{args.augment}/"
     model_savepath,model_checkpoint = f"../results/models/{save_dir}/", "../results/checkpoints"
     BATCHSIZE, EPOCHS = 16, args.epochs
@@ -44,8 +45,8 @@ def train_unet(args):
     else:
         LOSS = get_loss(args.loss) # if 
     
-    for idx in tqdm(range(1)):
-        X_train,X_val,X_test,y_train,y_val,y_test,y_train_cat,y_val_cat,y_test_cat = create_dataset(idx)
+    for idx in tqdm(range(65)):
+        X_train,X_val,X_test,y_train,y_val,y_test,y_train_cat,y_val_cat,y_test_cat = create_dataset(idx, augment=args.augment)
         print(f"X_train.shape: {X_train.shape}, X_val.shape: {X_val.shape}, X_test.shape: {X_test.shape}")
         IMG_HEIGHT,IMG_WIDTH,IMG_CHANNELS = X_train.shape[1],X_train.shape[2],X_train.shape[3]
         def get_model():
@@ -82,8 +83,8 @@ def train_attention():
     else:
         LOSS = get_loss(args.loss) # if 
     
-    for idx in tqdm(range(1)):
-        X_train,X_val,X_test,y_train,y_val,y_test,y_train_cat,y_val_cat,y_test_cat = create_dataset(idx)
+    for idx in tqdm(range(65)):
+        X_train,X_val,X_test,y_train,y_val,y_test,y_train_cat,y_val_cat,y_test_cat = create_dataset(idx, augment=args.augment)
         print(f"X_train.shape: {X_train.shape}, X_val.shape: {X_val.shape}, X_test.shape: {X_test.shape}")
         IMG_HEIGHT,IMG_WIDTH,IMG_CHANNELS = X_train.shape[1],X_train.shape[2],X_train.shape[3]
         def get_model():
@@ -120,8 +121,8 @@ def train_residual():
     else:
         LOSS = get_loss(args.loss) # if 
     
-    for idx in tqdm(range(1)):
-        X_train,X_val,X_test,y_train,y_val,y_test,y_train_cat,y_val_cat,y_test_cat = create_dataset(idx)
+    for idx in tqdm(range(65)):
+        X_train,X_val,X_test,y_train,y_val,y_test,y_train_cat,y_val_cat,y_test_cat = create_dataset(idx, augment=args.augment)
         print(f"X_train.shape: {X_train.shape}, X_val.shape: {X_val.shape}, X_test.shape: {X_test.shape}")
         IMG_HEIGHT,IMG_WIDTH,IMG_CHANNELS = X_train.shape[1],X_train.shape[2],X_train.shape[3]
         def get_model():
@@ -153,9 +154,10 @@ def train_residual():
 if __name__ == "__main__":
     print(f"\n\nTraining {model.upper()} model on {dataset.upper()} dataset, w/ early stopping set to {early_stopping}...\n")
     if args.model == "unet":
-        train_unet(args)
+        train_unet()
     elif args.model == "attention":
         train_attention()
     elif args.model == "residual":
         train_residual()
     
+    clean("../results") # clean_results

@@ -1,13 +1,18 @@
 import os
+import cv2
 import random
+import numpy as np
 from patchify import patchify
 from tqdm import tqdm
 from sklearn.preprocessing import LabelEncoder
 from tensorflow.keras.utils import normalize
 from sklearn.model_selection import KFold 
 from tensorflow.keras.utils import to_categorical
-import cv2
-import numpy as np
+from matplotlib import pyplot as plt
+from skimage.transform import AffineTransform, warp
+from skimage import io, img_as_ubyte
+from scipy.ndimage import rotate
+
 
 n_classes = 6
 
@@ -42,6 +47,14 @@ def h_transl(image, seed):
     htranslated_img = np.roll(image, n_pixels, axis=1)
     return htranslated_img
 
+transformations = {'rotate': rotation,
+                   'horizontal flip': h_flip, 
+                   'vertical flip': v_flip,
+                   'vertical shift': v_transl,
+                   'horizontal shift': h_transl
+                 }                #use dictionary to store names of functions 
+
+
 def get_filepaths(IMG_PATH="../datasets/FIB Tomography/images", MASK_PATH="../datasets/FIB Tomography/images"):
     impaths,mkpaths=[],[] # to store paths of images from folder
     for im in os.listdir(IMG_PATH):  # read image name from folder and append its path into "images" array     
@@ -68,7 +81,7 @@ def get_original_images(images,masks):
     return original_images, original_masks
 
 def get_augmented_images(original_images, original_masks):
-    images_to_generate=500 # double
+    images_to_generate=1000 # double
     seed_for_random = 42
     i=0   # variable to iterate till images_to_generate
     aug_images, aug_masks = [],[]
@@ -97,7 +110,7 @@ def get_augmented_images(original_images, original_masks):
         i =i+1
     return aug_images,aug_masks
 
-def patchify_dataset(original_images,original_masks,test_images,test_masks):
+def patchify_dataset(original_images,original_masks,test_images,test_masks, augment=False):
     X_test,y_test,X_train,y_train = [],[],[],[]
     train_images, train_masks = original_images, original_masks
     for i in range(len(test_images)):
@@ -112,10 +125,14 @@ def patchify_dataset(original_images,original_masks,test_images,test_masks):
         for x in range(len(image_patches)):
             for y in range(len(image_patches[0])):
                 X_train.append(image_patches[x,y,:,:]);y_train.append(mask_patches[x,y,:,:]);
+    if augment:
+        print("Augmentation Enabled")
+        aug_images,aug_masks = get_augmented_images(X_train,y_train) # augment training images
+        X_train,y_train = np.array(X_train+aug_images), np.array(y_train+aug_masks)
+    else:
+        print("Augmentation Disabled")
+        X_train,y_train = np.array(X_train), np.array(y_train)
     print("Total: ", len(X_train)+len(X_test))
-    #aug_images,aug_masks = get_augmented_images(X_train,y_train) # augment training images
-#     X_train,y_train = np.array(X_train+aug_images), np.array(y_train+aug_masks)
-    X_train,y_train = np.array(X_train), np.array(y_train)
     X_test,y_test = np.array(X_test),np.array(y_test)
     return X_train,X_test,y_train,y_test
 
@@ -207,13 +224,13 @@ def unpatchify(patches):
                 count += 1
     return tmp
 
-def create_dataset(number):
+def create_dataset(number, augment=False):
     impaths,mkpaths = get_filepaths(IMG_PATH="../datasets/FIB Tomography/images", MASK_PATH="../datasets/FIB Tomography/Labels") # get paths to all files
     original_images, original_masks = get_original_images(impaths,mkpaths) # get all original images
     test_images,test_masks = [original_images[number]], [original_masks[number]]   # create train/test split
     del original_images[number] # delete test images from training dataset
     del original_masks[number]
-    X_train,X_test,y_train,y_test = patchify_dataset(original_images,original_masks,test_images,test_masks) # patchify
+    X_train,X_test,y_train,y_test = patchify_dataset(original_images,original_masks,test_images,test_masks, augment) # patchify
     return get_trainvaltest_split(X_train,X_test,y_train,y_test)
 def create_dataset_no_patches(number):
     impaths,mkpaths = get_filepaths(IMG_PATH="../datasets/FIB Tomography/images", MASK_PATH="../datasets/FIB Tomography/Labels") # get paths to all files
