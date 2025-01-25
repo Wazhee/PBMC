@@ -54,7 +54,7 @@ transformations = {'rotate': rotation,
                    'horizontal shift': h_transl
                  }                #use dictionary to store names of functions 
 
-
+# def get_filepaths(IMG_PATH="../datasets/FIB Tomography/images", MASK_PATH="../datasets/FIB Tomography/images"):
 def get_filepaths(IMG_PATH="../datasets/FIB Tomography/images", MASK_PATH="../datasets/FIB Tomography/images"):
     impaths,mkpaths=[],[] # to store paths of images from folder
     for im in os.listdir(IMG_PATH):  # read image name from folder and append its path into "images" array     
@@ -74,7 +74,7 @@ def get_original_images(images,masks):
     original_images, original_masks = [],[]
     number = random.randint(0, len(images)-1)  #PIck a number to select an image & mask
     for i in tqdm(range(len(images))):
-        # load images and extract file paths
+        # Load and resize images and masks
         original_images.append(cv2.resize(cv2.imread(images[i],0), dim, interpolation=cv2.INTER_NEAREST))
         original_masks.append(cv2.resize(cv2.imread(masks[i],0), dim, interpolation=cv2.INTER_NEAREST))
     print(f"Original Images: {len(original_images)}, Original masks: {len(original_masks)}") # ensure images loaded correctly

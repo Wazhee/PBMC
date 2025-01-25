@@ -14,7 +14,7 @@ parser.add_argument('-augment', action='store_true') # enable data augmentation
 parser.add_argument('-early_stopping', action='store_true') # enable early_stopping
 parser.add_argument('-gpu', type=int, default=0, choices=[0, 1, 2, 3])
 parser.add_argument('-epochs', type=int, default=100)
-parser.add_argument('-loss', default='categorical_crossentropy', choices=['mae', 'mse', 'categorical_crossentropy', 'dice', 'focal'])
+parser.add_argument('-loss', default='categorical_crossentropy', choices=['dice_crossentropy', 'mae', 'mse', 'categorical_crossentropy', 'dice', 'focal'])
 parser.add_argument('-loss2', default=None, choices=['mae', 'mse', 'categorical_crossentropy', 'dice', 'focal'])
 parser.add_argument('-save_dir', default='models', choices=['unet', 'attention', 'residual'])
 
@@ -35,6 +35,8 @@ def get_loss(loss, secondary_loss = None):
         return dice_coef_loss
     elif loss == 'focal':
         return focal_loss
+    elif loss == 'dice_crossentropy':
+        return combined_loss
         
 def train_unet():
     save_dir = f"EPOCHS{args.epochs}_{args.model.upper()}_{args.loss}_es{args.early_stopping}_aug{args.augment}/"

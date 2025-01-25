@@ -14,6 +14,7 @@ from tensorflow.keras import backend as K
 from tensorflow.keras.callbacks import EarlyStopping
 from keras.losses import MeanSquaredError as mse
 import tensorflow.keras.backend as K
+import tensorflow as tf
 
 image_directory, mask_directory = "dataset/augmented 465/images/", "dataset/augmented 465/masks/"
 
@@ -143,6 +144,22 @@ def categorical_focal_loss(gamma=2.0, alpha=0.25):
     return focal_loss
 
 focal_loss = categorical_focal_loss(alpha=[[.15, .15, .25, .15, .15, .25]])
+
+def combined_loss(y_true, y_pred):
+    # Dice Loss
+    def dice_loss(y_true, y_pred):
+        smooth = 1e-5
+        intersection = tf.reduce_sum(y_true * y_pred, axis=[1, 2, 3])
+        union = tf.reduce_sum(y_true, axis=[1, 2, 3]) + tf.reduce_sum(y_pred, axis=[1, 2, 3])
+        dice = (2. * intersection + smooth) / (union + smooth)
+        return 1 - tf.reduce_mean(dice)
+
+    # Categorical Crossentropy Loss
+    cce_loss = tf.keras.losses.CategoricalCrossentropy()
+
+    # Combine the losses
+    total_loss = cce_loss(y_true, y_pred) + dice_loss(y_true, y_pred)
+    return total_loss
 
 def create_csv(scores,slicex,save_dir):
     """create and initialize save directories"""
