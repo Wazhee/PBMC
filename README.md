@@ -20,19 +20,19 @@ conda env create --name pbmc --file=environments.yml
 ```python
 cd Internship\ Project/PBMC/
 conda activate tensorflow2.16.1
-python main.py -model unet -epochs 100 -gpu 0
+python main.py -model unet -augment -epochs 300 -gpu 0
 ```
 
 ```python
 cd Internship\ Project/PBMC/
 conda activate tensorflow2.16.1
-python main.py -model attention -augment -epochs 100 -gpu 1
+python main.py -model attention -augment -epochs 300 -gpu 1
 ```
 
 ```python
 cd Internship\ Project/PBMC/
 conda activate tensorflow2.16.1
-python main.py -model residual -augment -epochs 100 -gpu 2
+python main.py -model residual -augment -epochs 300 -gpu 2
 ```
 
 ## Train PBCNN Models
