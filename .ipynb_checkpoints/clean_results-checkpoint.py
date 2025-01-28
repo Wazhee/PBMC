@@ -27,15 +27,13 @@ def get_summary(df, col):
     return round(mean, 2), round(stdev, 2)
 
 def clean(src_dir):
-    runs = [x for x in os.listdir(src_dir) if "EPOCHS100" in x]
+    runs = [x for x in os.listdir(src_dir) if "EPOCHS300" in x]
     # Get averages for each column
     averages = {}
     for run in tqdm(runs): # iterate through every run completed
         csv_dir = os.path.join(src_dir, run)
-        try:
-            if "summary.txt" in os.listdir(csv_dir):
-                print("Folder already cleaned!")
-            else:
+        if "64_slice.csv" in os.listdir(csv_dir):
+            try:
                 df = compile_csvfiles(csv_dir)
                 with open(os.path.join(csv_dir, "summary.txt"), "w") as file: # save summary of results
                     for col in list(df.columns):
@@ -43,7 +41,7 @@ def clean(src_dir):
                         # Write to the file
                         file.write(f"AVERAGE {col.upper()}: {mean} || STDEV: {stdev}\n")
                         file.write("\n")
-        except:
-            print(f"'{csv_dir }' has missing files...")
+            except:
+                print(f"'{csv_dir }' has missing files...")
 if __name__ == "__main__":
     clean("../results/")

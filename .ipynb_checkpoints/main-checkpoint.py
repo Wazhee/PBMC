@@ -176,5 +176,3 @@ if __name__ == "__main__":
         train_attention()
     elif args.model == "residual":
         train_residual()
-    
-    clean("../results") # clean_results
