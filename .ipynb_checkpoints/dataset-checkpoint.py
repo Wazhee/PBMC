@@ -12,7 +12,7 @@ from matplotlib import pyplot as plt
 from skimage.transform import AffineTransform, warp
 from skimage import io, img_as_ubyte
 from scipy.ndimage import rotate
-
+from skimage.exposure import match_histograms
 
 n_classes = 6
 
@@ -76,6 +76,22 @@ def get_original_images(images,masks):
     for i in tqdm(range(len(images))):
         # Load and resize images and masks
         original_images.append(cv2.resize(cv2.imread(images[i],0), dim, interpolation=cv2.INTER_NEAREST))
+        original_masks.append(cv2.resize(cv2.imread(masks[i],0), dim, interpolation=cv2.INTER_NEAREST))
+    print(f"Original Images: {len(original_images)}, Original masks: {len(original_masks)}") # ensure images loaded correctly
+    return original_images, original_masks
+
+def get_custom_images(images,masks):
+    ref = cv2.imread("../datasets/FIB Tomography/images/SEM Image - SliceImage - 121.tif",0)# load reference
+    dim = (1280,640)
+    # load original images
+    images = [im for im in images if ".tif" in im]
+    masks = [im for im in masks if ".png" in im]
+    original_images, original_masks = [],[]
+    number = random.randint(0, len(images)-1)  #PIck a number to select an image & mask
+    for i in tqdm(range(len(images))):
+        # Load and resize images and masks
+        # Match the histogram of 100nm to 500nm
+        original_images.append(cv2.resize(match_histograms(cv2.imread(images[i],0), ref), dim, interpolation=cv2.INTER_NEAREST))
         original_masks.append(cv2.resize(cv2.imread(masks[i],0), dim, interpolation=cv2.INTER_NEAREST))
     print(f"Original Images: {len(original_images)}, Original masks: {len(original_masks)}") # ensure images loaded correctly
     return original_images, original_masks
@@ -177,7 +193,7 @@ def create_dataset(number, augment=False):
     return get_trainvaltest_split(X_train,X_test,y_train,y_test)
 def create_custom_dataset(img="../datasets/100nm/Images/Aligned SEM Images/", msk="../datasets/100nm/Images/fake_labels/", number=0, augment=False):
     impaths,mkpaths = get_filepaths(IMG_PATH=img, MASK_PATH=msk) # get paths to all files
-    original_images, original_masks = get_original_images(impaths,mkpaths) # get all original images
+    original_images, original_masks = get_custom_images(impaths,mkpaths) # get all original images
     test_images,test_masks = [original_images[number]], [original_masks[number]]   # create train/test split
     del original_images[number] # delete test images from training dataset
     del original_masks[number]
