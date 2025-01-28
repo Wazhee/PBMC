@@ -57,7 +57,8 @@ def train_unet():
         LOSS = get_loss(args.loss) # if 
     
     if args.test:
-        save_dir = "../results/"
+        print("Test script enabled...\n")
+        save_dir = "Testing_Unet"
         model_path = "../results/models/EPOCHS300_UNET_focal_esFalse_augTrue/unet.hdf5"
         for idx in tqdm(range(65)):
             X_train,X_val,X_test,y_train,y_val,y_test,y_train_cat,y_val_cat,y_test_cat = create_dataset(idx, augment=args.augment)
@@ -74,7 +75,7 @@ def train_unet():
             model.load_weights(model_path)
             scores = performance_evaluation(model, X_test, y_test, n_classes, scores,idx,save_dir) # calculate results
             # save results of K-fold validation
-            create_csv(scores, idx, save_dir)
+#             create_csv(scores, idx, save_dir)
     else:
         for idx in tqdm(range(65)):
             X_train,X_val,X_test,y_train,y_val,y_test,y_train_cat,y_val_cat,y_test_cat = create_dataset(idx, augment=args.augment)
