@@ -12,6 +12,7 @@ from matplotlib import pyplot as plt
 from skimage.transform import AffineTransform, warp
 from skimage import io, img_as_ubyte
 from scipy.ndimage import rotate
+from skimage.exposure import match_histograms
 
 
 n_classes = 6
@@ -67,6 +68,7 @@ def get_filepaths(IMG_PATH="../datasets/FIB Tomography/images", MASK_PATH="../da
     return impaths,mkpaths
 
 def get_original_images(images,masks):
+    ref = cv2.imread("../datasets/FIB Tomography/images/SEM Image - SliceImage - 121.tif",0)
     dim = (1280,640)
     # load original images
     images = [im for im in images if ".tif" in im]
@@ -75,13 +77,14 @@ def get_original_images(images,masks):
     number = random.randint(0, len(images)-1)  #PIck a number to select an image & mask
     for i in tqdm(range(len(images))):
         # Load and resize images and masks
-        original_images.append(cv2.resize(cv2.imread(images[i],0), dim, interpolation=cv2.INTER_NEAREST))
+        tmp = match_histograms(cv2.imread(images[i],0), ref)# Match the histogram of 100nm to 500nm
+        original_images.append(cv2.resize(tmp, dim, interpolation=cv2.INTER_NEAREST))
         original_masks.append(cv2.resize(cv2.imread(masks[i],0), dim, interpolation=cv2.INTER_NEAREST))
     print(f"Original Images: {len(original_images)}, Original masks: {len(original_masks)}") # ensure images loaded correctly
     return original_images, original_masks
 
 def get_augmented_images(original_images, original_masks):
-    images_to_generate=100 # double
+    images_to_generate=2000 # double
     seed_for_random = 42
     i=0   # variable to iterate till images_to_generate
     aug_images, aug_masks = [],[]
@@ -105,32 +108,41 @@ def get_augmented_images(original_images, original_masks):
         if(2 in np.unique(transformed_mask) or 5 in np.unique(transformed_mask)):
             aug_images.append(transformed_image)
             aug_masks.append(transformed_mask)
-
+#         aug_images.append(transformed_image)
+#         aug_masks.append(transformed_mask)
         i =i+1
     return aug_images,aug_masks
 
 def patchify_dataset(original_images,original_masks,test_images,test_masks, augment=False):
     X_test,y_test,X_train,y_train = [],[],[],[]
     train_images, train_masks = original_images, original_masks
+    for i in range(len(test_images)):
+        tmp1, tmp2 = [], []
+        p = (128,256)# desired patch size
+        image_patches,mask_patches = patchify(test_images[i],(p[0],p[1]), step=p[0]), patchify(test_masks[i],(p[0],p[1]), step=p[0])
+        for x in range(len(image_patches)):
+            for y in range(len(image_patches[0])):
+                tmp1.append(image_patches[x,y,:,:]);tmp2.append(mask_patches[x,y,:,:]); # add patch to dataset
+        X_train.append(tmp1);y_train.append(tmp1)
+        
+    for i in range(len(original_images)):
+        tmp1, tmp2 = [], []
+        p = (128,256)# desired patch size
+        image_patches,mask_patches = patchify(train_images[i],(p[0],p[1]), step=p[0]), patchify(train_masks[i],(p[0],p[1]), step=p[0])
+        for x in range(len(image_patches)):
+            for y in range(len(image_patches[0])):
+                tmp1.append(image_patches[x,y,:,:]);tmp2.append(mask_patches[x,y,:,:]);
+        X_train.append(tmp1);y_train.append(tmp2)
     if augment:
         print("Augmentation Enabled")
-        aug_images, aug_masks = get_augmented_images(train_images,train_masks) # augment training images
-        train_images, train_masks = train_images+aug_images, train_masks+aug_masks
-    print("Original: ", len(train_images))
-    for i in range(len(test_images)):
-        p = (128,128)# desired patch size
-        image_patches,mask_patches = patchify(test_images[i],(p[0],p[1]), step=p[0]), patchify(test_masks[i],(p[0],p[1]), step=p[0]) 
-        X_test.append(image_patches.reshape(50, 128, 128)), y_test.append(mask_patches.reshape(50, 128, 128))
-    for i in range(len(train_images)):
-        p = (128,128)# desired patch size
-        image_patches,mask_patches = patchify(train_images[i],(p[0],p[1]), step=p[0]), patchify(train_masks[i],(p[0],p[1]), step=p[0])
-        X_train.append(image_patches.reshape(50, 128, 128)), y_train.append(mask_patches.reshape(50, 128, 128))
+        aug_images,aug_masks = get_augmented_images(X_train,y_train) # augment training images
+        X_train,y_train = np.array(X_train+aug_images), np.array(y_train+aug_masks)
+    else:
+        print("Augmentation Disabled")
+        X_train,y_train = np.array(X_train), np.array(y_train)
     print("Total: ", len(X_train)+len(X_test))
-    n, p, h, w = np.array(X_train).shape
-    X_train,y_train = np.array(X_train).reshape(n*p, 128, 128),np.array(y_train).reshape(n*p, 128, 128)
-    
-    n, p, h, w = np.array(X_test).shape
-    X_test,y_test = np.array(X_test).reshape(n*p, 128, 128),np.array(y_test).reshape(n*p, 128, 128)
+    X_test,y_test = np.array(X_test),np.array(y_test)
+    X_test.shape
     return X_train,X_test,y_train,y_test
 
 def get_trainvaltest_split(X_train,X_test,y_train,y_test):
@@ -152,7 +164,7 @@ def get_trainvaltest_split(X_train,X_test,y_train,y_test):
     y_train_input = np.expand_dims(y_train_encoded_original_shape, axis=3)
     y_test_input = np.expand_dims(y_test_encoded_original_shape, axis=3)
     #create train/validataion splits
-    k = 100
+    k = 1
     kf = KFold(n_splits=k, shuffle=True, random_state=8)
     train_index, test_index = next(kf.split(train_images))
     X_train,y_train = train_images[train_index,:,:], y_train_input[train_index,:,:]
@@ -167,6 +179,60 @@ def get_trainvaltest_split(X_train,X_test,y_train,y_test):
     y_val_cat = val_masks_cat.reshape((y_val.shape[0], y_val.shape[1], y_val.shape[2], n_classes))
     return X_train,X_val,X_test, y_train,y_val,y_test, y_train_cat,y_val_cat,y_test_cat
 
+def unpatch(patches):
+    final_image = np.zeros((256,256))
+    current_x = 0 # keep track of where your current image was last placed in the y coordinate
+    images = [patches[0,:,:64,0],patches[1,:,:,0]]
+    for image in images:
+        # add an image to the final array and increment the y coordinate
+        final_image[:image.shape[0],current_x:image.shape[1]+current_x] = image
+        current_x += image.shape[1]
+    new_image = final_image[:128,:64+128]
+    
+    final_image = np.zeros((256,256))
+    current_x = 0 # keep track of where your current image was last placed in the y coordinate
+    images = [new_image[:,:128],patches[2,:,:,0]]
+    for image in images:
+        # add an image to the final array and increment the y coordinate
+        final_image[:image.shape[0],current_x:image.shape[1]+current_x] = image
+        current_x += image.shape[1]
+    return final_image[:128,:]
+
+def combine_patches(top,bot):
+    images = [top,bot]
+    final_image = np.zeros((256,256))
+    current_y = 0 # keep track of where your current image was last placed in the y coordinate
+    for image in images:
+        # add an image to the final array and increment the y coordinate
+        final_image[current_y:image.shape[0]+current_y,:image.shape[1]] = image
+        current_y += image.shape[0]
+    return final_image
+
+# def unpatchify(patches):
+#     top = unpatch(patches[0:4])
+#     bot = unpatch(patches[6:9])
+#     return combine_patches(top,bot)
+
+def unpatchify(patches):
+    image_patches = np.zeros((5, 9, 128, 256))
+    i,j = 0,0
+    for idx in range(len(patches)):
+        image_patches[i,j,:,:] = patches[idx,:,:,0]
+        j+=1
+        if j == 9:
+            j=0
+            i+=1
+            
+    p = (128,256)
+    tmp = np.zeros((640,1280))
+    for i in range(len(image_patches)):
+        count = 0
+        for j in range(len(image_patches[0])):
+            if(j%2 == 0):
+                tmp[p[0]*i:p[0]*(i+1), p[1]*count:p[1]*(count+1)] = image_patches[i,j,:,:]
+                count += 1
+    return tmp
+
 def create_dataset(number, augment=False):
     impaths,mkpaths = get_filepaths(IMG_PATH="../datasets/FIB Tomography/images", MASK_PATH="../datasets/FIB Tomography/Labels") # get paths to all files
     original_images, original_masks = get_original_images(impaths,mkpaths) # get all original images
@@ -174,7 +240,7 @@ def create_dataset(number, augment=False):
     del original_images[number] # delete test images from training dataset
     del original_masks[number]
     X_train,X_test,y_train,y_test = patchify_dataset(original_images,original_masks,test_images,test_masks, augment) # patchify
-    return get_trainvaltest_split(X_train,X_test,y_train,y_test)
+    return X_train,X_test,y_train,y_test
 def create_dataset_no_patches(number):
     impaths,mkpaths = get_filepaths(IMG_PATH="../datasets/FIB Tomography/images", MASK_PATH="../datasets/FIB Tomography/Labels") # get paths to all files
     original_images, original_masks = get_original_images(impaths,mkpaths) # get all original images

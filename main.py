@@ -5,6 +5,7 @@ import tensorflow as tf
 from evaluate import *
 from dataset import *
 from clean_results import *
+from tensorflow.keras.optimizers import Adam
 
 parser = argparse.ArgumentParser()
 parser.add_argument('-train', action='store_true')
@@ -26,6 +27,13 @@ model = args.model
 gpus = tf.config.list_physical_devices('GPU')
 if len(gpus) > 0: 
     tf.config.experimental.set_visible_devices(gpus[args.gpu], 'GPU')
+    
+# Define the Dice score metric
+def dice_score(y_true, y_pred):
+    y_true_f = tf.keras.backend.flatten(y_true)
+    y_pred_f = tf.keras.backend.flatten(y_pred)
+    intersection = tf.keras.backend.sum(y_true_f * y_pred_f)
+    return (2. * intersection + 1e-6) / (tf.keras.backend.sum(y_true_f) + tf.keras.backend.sum(y_pred_f) + 1e-6)
 
 def get_loss(loss, secondary_loss = None):
     specialty = {'focal': focal_loss, 'dice': dice_coef_loss}
@@ -56,8 +64,11 @@ def train_unet():
         # start training
         scores, iou_list, acc_list = {},[],[]
         # initialize model
+        learning_rate = 0.0001  # Specify your desired learning rate
         model = get_model()
-        model.compile(optimizer='adam', loss=LOSS, metrics=['accuracy'])  
+        model.compile(optimizer=Adam(learning_rate=learning_rate), loss=LOSS, metrics=['accuracy', dice_score])
+#         model = get_model()
+#         model.compile(optimizer='adam', loss=LOSS, metrics=['accuracy'])  
 
         early_stopping = EarlyStopping(monitor='val_loss', patience=30, restore_best_weights=True) # implement early_stopping mechanism
         history = model.fit(X_train, y_train_cat, 
@@ -75,6 +86,8 @@ def train_unet():
         # save model
         model.save(f"{model_savepath}{args.model}.hdf5")
         print("Model successfully trained and saved!")
+        
+
 
 def train_attention():
     save_dir = f"EPOCHS{args.epochs}_{args.model.upper()}_{args.loss}_es{args.early_stopping}_aug{args.augment}/"

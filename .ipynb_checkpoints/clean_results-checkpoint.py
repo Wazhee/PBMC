@@ -32,16 +32,18 @@ def clean(src_dir):
     averages = {}
     for run in tqdm(runs): # iterate through every run completed
         csv_dir = os.path.join(src_dir, run)
-        if "summary.txt" in os.listdir(csv_dir):
-            print("Folder already cleaned!")
-        else:
-            df = compile_csvfiles(csv_dir)
-            with open(os.path.join(csv_dir, "summary.txt"), "w") as file: # save summary of results
-                for col in list(df.columns):
-                    mean, stdev = get_summary(df, col)
-                    # Write to the file
-                    file.write(f"AVERAGE {col.upper()}: {mean} || STDEV: {stdev}\n")
-                    file.write("\n")
-                
+        try:
+            if "summary.txt" in os.listdir(csv_dir):
+                print("Folder already cleaned!")
+            else:
+                df = compile_csvfiles(csv_dir)
+                with open(os.path.join(csv_dir, "summary.txt"), "w") as file: # save summary of results
+                    for col in list(df.columns):
+                        mean, stdev = get_summary(df, col)
+                        # Write to the file
+                        file.write(f"AVERAGE {col.upper()}: {mean} || STDEV: {stdev}\n")
+                        file.write("\n")
+        except:
+            print(f"'{csv_dir }' has missing files...")
 if __name__ == "__main__":
     clean("../results/")

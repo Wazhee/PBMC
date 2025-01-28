@@ -181,7 +181,7 @@ def performance_evaluation(model, X_test, y_test, n_classes, scores, slicex, sav
     y_pred_argmax=np.argmax(y_pred, axis=3) # combine prediction to single image
     pred = np.expand_dims(y_pred_argmax,axis=3)
     if(X_test.shape[1] < 256):
-        img,gt,msk = unpatchify(X_test),unpatchify(y_test),unpatchify(pred) # unpatchify target and prediction
+        img,gt,msk = unpatch(X_test),unpatch(y_test),unpatch(pred) # unpatchify target and prediction
         target, predicted = to_categorical(gt, num_classes=n_classes), to_categorical(msk, num_classes=n_classes) # split classes
     else:
         img,gt,msk = X_test[0,:,:,0],y_test[0,:,:,0],pred[0,:,:,0] 
@@ -222,6 +222,9 @@ def performance_evaluation(model, X_test, y_test, n_classes, scores, slicex, sav
             scores[materials[idx]].append(iou_scores[idx])
         else:
             scores[materials[idx]] = [iou_scores[idx]]
+            
+    scores["Dice"] = [sum(dice_scores[1:])/5] # Exclude 'others' from average
+    scores["IoU"] = [sum(iou_scores[1:])/5] # Exclude 'others' from average
     return scores
 
 def unpatch(patches):
@@ -258,22 +261,5 @@ def combine_patches(top,bot):
 #     bot = unpatch(patches[6:9])
 #     return combine_patches(top,bot)
 
-def unpatchify(patches):
-    image_patches = np.zeros((5, 9, 128, 256))
-    i,j = 0,0
-    for idx in range(len(patches)):
-        image_patches[i,j,:,:] = patches[idx,:,:,0]
-        j+=1
-        if j == 9:
-            j=0
-            i+=1
-            
-    p = (128,256)
-    tmp = np.zeros((640,1280))
-    for i in range(len(image_patches)):
-        count = 0
-        for j in range(len(image_patches[0])):
-            if(j%2 == 0):
-                tmp[p[0]*i:p[0]*(i+1), p[1]*count:p[1]*(count+1)] = image_patches[i,j,:,:]
-                count += 1
-    return tmp
+def unpatch(patches):
+    return unpatchify(patches[:,:,:,0].reshape(5, 10, 128, 128), (640, 1280))
