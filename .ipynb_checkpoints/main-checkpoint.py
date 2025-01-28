@@ -107,8 +107,9 @@ def train_attention():
         # start training
         scores, iou_list, acc_list = {},[],[]
         # initialize model
+        learning_rate = 0.0001  # Specify your desired learning rate
         model = get_model()
-        model.compile(optimizer='adam', loss=LOSS, metrics=['accuracy'])  
+        model.compile(optimizer=Adam(learning_rate=learning_rate), loss=LOSS, metrics=['accuracy', dice_score])
 
         early_stopping = EarlyStopping(monitor='val_loss', patience=30, restore_best_weights=True) # implement early_stopping mechanism
         history = model.fit(X_train, y_train_cat, 
@@ -145,8 +146,9 @@ def train_residual():
         # start training
         scores, iou_list, acc_list = {},[],[]
         # initialize model
+        learning_rate = 0.0001  # Specify your desired learning rate
         model = get_model()
-        model.compile(optimizer='adam', loss=LOSS, metrics=['accuracy'])  
+        model.compile(optimizer=Adam(learning_rate=learning_rate), loss=LOSS, metrics=['accuracy', dice_score])
 
         early_stopping = EarlyStopping(monitor='val_loss', patience=30, restore_best_weights=True) # implement early_stopping mechanism
         history = model.fit(X_train, y_train_cat, 
