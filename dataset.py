@@ -175,6 +175,14 @@ def create_dataset(number, augment=False):
     del original_masks[number]
     X_train,X_test,y_train,y_test = patchify_dataset(original_images,original_masks,test_images,test_masks, augment) # patchify
     return get_trainvaltest_split(X_train,X_test,y_train,y_test)
+def create_custom_dataset(img="../datasets/100nm/Images/Aligned SEM Images/", msk="../datasets/100nm/Images/fake_labels/", number=0, augment=False):
+    impaths,mkpaths = get_filepaths(IMG_PATH=img, MASK_PATH=msk) # get paths to all files
+    original_images, original_masks = get_original_images(impaths,mkpaths) # get all original images
+    test_images,test_masks = [original_images[number]], [original_masks[number]]   # create train/test split
+    del original_images[number] # delete test images from training dataset
+    del original_masks[number]
+    X_train,X_test,y_train,y_test = patchify_dataset(original_images,original_masks,test_images,test_masks, augment) # patchify
+    return get_trainvaltest_split(X_train,X_test,y_train,y_test)
 def create_dataset_no_patches(number):
     impaths,mkpaths = get_filepaths(IMG_PATH="../datasets/FIB Tomography/images", MASK_PATH="../datasets/FIB Tomography/Labels") # get paths to all files
     original_images, original_masks = get_original_images(impaths,mkpaths) # get all original images

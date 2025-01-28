@@ -19,6 +19,9 @@ parser.add_argument('-loss', default='categorical_crossentropy', choices=['dice_
 parser.add_argument('-loss2', default=None, choices=['mae', 'mse', 'categorical_crossentropy', 'dice', 'focal'])
 parser.add_argument('-save_dir', default='models', choices=['unet', 'attention', 'residual'])
 parser.add_argument('-test', action='store_true')
+parser.add_argument('-custom', action='store_true')
+parser.add_argument('-img_path', type=str, default="../datasets/100nm/Images/Aligned SEM Images/")
+parser.add_argument('-msk_path', type=str, default="../datasets/100nm/Images/fake_labels/")
 
 args = parser.parse_args()
 dataset = args.dataset
@@ -60,22 +63,17 @@ def train_unet():
         print("Test script enabled...\n")
         save_dir = "Testing_Unet"
         model_path = "../results/models/EPOCHS300_UNET_focal_esFalse_augTrue/unet.hdf5"
-        for idx in tqdm(range(65)):
-            X_train,X_val,X_test,y_train,y_val,y_test,y_train_cat,y_val_cat,y_test_cat = create_dataset(idx, augment=args.augment)
+        for idx in tqdm(range(150)):
+            X_train,X_val,X_test,y_train,y_val,y_test,y_train_cat,y_val_cat,y_test_cat = create_custom_dataset(img=args.img_path, msk=args.msk_path, number=idx, augment=args.augment)
             print(f"X_train.shape: {X_train.shape}, X_val.shape: {X_val.shape}, X_test.shape: {X_test.shape}")
             IMG_HEIGHT,IMG_WIDTH,IMG_CHANNELS = X_train.shape[1],X_train.shape[2],X_train.shape[3]
             def get_model():
                 return multi_unet_model(n_classes=n_classes, IMG_HEIGHT=IMG_HEIGHT, IMG_WIDTH=IMG_WIDTH, IMG_CHANNELS=IMG_CHANNELS)
             # start training
-            scores, iou_list, acc_list = {},[],[]
-            # initialize model
             learning_rate = 0.0001  # Specify your desired learning rate
-            model = get_model()
-#             model.compile(optimizer=Adam(learning_rate=learning_rate), loss=LOSS, metrics=['accuracy', dice_score])
+            model = get_model()        # initialize model
             model.load_weights(model_path)
-            scores = performance_evaluation(model, X_test, y_test, n_classes, scores,idx,save_dir) # calculate results
-            # save results of K-fold validation
-#             create_csv(scores, idx, save_dir)
+            scores = performance_evaluation(model, X_test, y_test, n_classes, {}, idx, save_dir) # calculate results
     else:
         for idx in tqdm(range(65)):
             X_train,X_val,X_test,y_train,y_val,y_test,y_train_cat,y_val_cat,y_test_cat = create_dataset(idx, augment=args.augment)
