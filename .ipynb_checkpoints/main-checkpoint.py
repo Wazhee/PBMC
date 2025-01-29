@@ -114,7 +114,7 @@ def train_attention():
     if args.test:
         print("Test script enabled...\n")
         save_dir = "Testing_Unet"
-        model_path = "../results/models/EPOCHS300_UNET_focal_esFalse_augTrue/unet.hdf5"
+        model_path = "../results/models/EPOCHS300_ATTENTION_categorical_crossentropy_esFalse_augTrue/attention.hdf5"
         for idx in tqdm(range(150)):
             X_train,X_val,X_test,y_train,y_val,y_test,y_train_cat,y_val_cat,y_test_cat = create_custom_dataset(img=args.img_path, msk=args.msk_path, number=idx, augment=args.augment)
             print(f"X_train.shape: {X_train.shape}, X_val.shape: {X_val.shape}, X_test.shape: {X_test.shape}")
@@ -167,8 +167,8 @@ def train_residual():
         LOSS = get_loss(args.loss) # if 
     if args.test:
         print("Test script enabled...\n")
-        save_dir = "Testing_Unet"
-        model_path = "../results/models/EPOCHS300_UNET_focal_esFalse_augTrue/unet.hdf5"
+        save_dir = "Testing_Attention_"
+        model_path = "../results/models/EPOCHS300_RESIDUAL_categorical_crossentropy_esFalse_augTrue/residual.hdf5"
         for idx in tqdm(range(150)):
             X_train,X_val,X_test,y_train,y_val,y_test,y_train_cat,y_val_cat,y_test_cat = create_custom_dataset(img=args.img_path, msk=args.msk_path, number=idx, augment=args.augment)
             print(f"X_train.shape: {X_train.shape}, X_val.shape: {X_val.shape}, X_test.shape: {X_test.shape}")
