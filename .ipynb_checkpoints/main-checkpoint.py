@@ -16,7 +16,6 @@ parser.add_argument('-early_stopping', action='store_true') # enable early_stopp
 parser.add_argument('-gpu', type=int, default=0, choices=[0, 1, 2, 3])
 parser.add_argument('-epochs', type=int, default=100)
 parser.add_argument('-loss', default='categorical_crossentropy', choices=['dice_crossentropy', 'mae', 'mse', 'categorical_crossentropy', 'dice', 'focal'])
-parser.add_argument('-loss2', default=None, choices=['mae', 'mse', 'categorical_crossentropy', 'dice', 'focal'])
 parser.add_argument('-save_dir', default='models', choices=['unet', 'attention', 'residual'])
 parser.add_argument('-test', action='store_true')
 parser.add_argument('-custom', action='store_true')
@@ -54,14 +53,10 @@ def train_unet():
     save_dir = f"EPOCHS{args.epochs}_{args.model.upper()}_{args.loss}_es{args.early_stopping}_aug{args.augment}/"
     model_savepath,model_checkpoint = f"../results/models/{save_dir}/", "../results/checkpoints"
     BATCHSIZE, EPOCHS = 16, args.epochs
-    if args.loss2 is not None:
-        LOSS = [get_loss(args.loss), get_loss(args.loss2)]
-    else:
-        LOSS = get_loss(args.loss) # if 
-    
+    LOSS = get_loss(args.loss) # if 
     if args.test:
         print("Test script enabled...\n")
-        save_dir = "Testing_Unet"
+        save_dir = "Testing_Unet_100nm"
         model_path = "../results/models/EPOCHS300_UNET_focal_esFalse_augTrue/unet.hdf5"
         for idx in tqdm(range(150)):
             X_train,X_val,X_test,y_train,y_val,y_test,y_train_cat,y_val_cat,y_test_cat = create_custom_dataset(img=args.img_path, msk=args.msk_path, number=idx, augment=args.augment)
@@ -107,20 +102,17 @@ def train_attention():
     save_dir = f"EPOCHS{args.epochs}_{args.model.upper()}_{args.loss}_es{args.early_stopping}_aug{args.augment}/"
     model_savepath,model_checkpoint = f"../results/models/{save_dir}/", "../results/checkpoints"
     BATCHSIZE, EPOCHS = 16, args.epochs
-    if args.loss2 is not None:
-        LOSS = [get_loss(args.loss), get_loss(args.loss2)]
-    else:
-        LOSS = get_loss(args.loss) # if 
+    LOSS = get_loss(args.loss) # if 
     if args.test:
         print("Test script enabled...\n")
-        save_dir = "Testing_Unet"
+        save_dir = "Testing_Attention_100nm"
         model_path = "../results/models/EPOCHS300_ATTENTION_categorical_crossentropy_esFalse_augTrue/attention.hdf5"
         for idx in tqdm(range(150)):
             X_train,X_val,X_test,y_train,y_val,y_test,y_train_cat,y_val_cat,y_test_cat = create_custom_dataset(img=args.img_path, msk=args.msk_path, number=idx, augment=args.augment)
             print(f"X_train.shape: {X_train.shape}, X_val.shape: {X_val.shape}, X_test.shape: {X_test.shape}")
             IMG_HEIGHT,IMG_WIDTH,IMG_CHANNELS = X_train.shape[1],X_train.shape[2],X_train.shape[3]
             def get_model():
-                return multi_unet_model(n_classes=n_classes, IMG_HEIGHT=IMG_HEIGHT, IMG_WIDTH=IMG_WIDTH, IMG_CHANNELS=IMG_CHANNELS)
+                return attention_unet(n_classes=n_classes, IMG_HEIGHT=IMG_HEIGHT, IMG_WIDTH=IMG_WIDTH, IMG_CHANNELS=IMG_CHANNELS)
             # start training
             learning_rate = 0.0001  # Specify your desired learning rate
             model = get_model()        # initialize model
@@ -139,7 +131,6 @@ def train_attention():
             learning_rate = 0.0001  # Specify your desired learning rate
             model = get_model()
             model.compile(optimizer=Adam(learning_rate=learning_rate), loss=LOSS, metrics=['accuracy', dice_score])
-
             early_stopping = EarlyStopping(monitor='val_loss', patience=30, restore_best_weights=True) # implement early_stopping mechanism
             history = model.fit(X_train, y_train_cat, 
                                 batch_size = BATCHSIZE, 
@@ -161,20 +152,17 @@ def train_residual():
     save_dir = f"EPOCHS{args.epochs}_{args.model.upper()}_{args.loss}_es{args.early_stopping}_aug{args.augment}/"
     model_savepath,model_checkpoint = f"../results/models/{save_dir}/", "../results/checkpoints"
     BATCHSIZE, EPOCHS = 16, args.epochs
-    if args.loss2 is not None:
-        LOSS = [get_loss(args.loss), get_loss(args.loss2)]
-    else:
-        LOSS = get_loss(args.loss) # if 
+    LOSS = get_loss(args.loss) # if 
     if args.test:
         print("Test script enabled...\n")
-        save_dir = "Testing_Attention_"
+        save_dir = "Testing_Residual_100nm"
         model_path = "../results/models/EPOCHS300_RESIDUAL_categorical_crossentropy_esFalse_augTrue/residual.hdf5"
         for idx in tqdm(range(150)):
             X_train,X_val,X_test,y_train,y_val,y_test,y_train_cat,y_val_cat,y_test_cat = create_custom_dataset(img=args.img_path, msk=args.msk_path, number=idx, augment=args.augment)
             print(f"X_train.shape: {X_train.shape}, X_val.shape: {X_val.shape}, X_test.shape: {X_test.shape}")
             IMG_HEIGHT,IMG_WIDTH,IMG_CHANNELS = X_train.shape[1],X_train.shape[2],X_train.shape[3]
             def get_model():
-                return multi_unet_model(n_classes=n_classes, IMG_HEIGHT=IMG_HEIGHT, IMG_WIDTH=IMG_WIDTH, IMG_CHANNELS=IMG_CHANNELS)
+                return residual_unet(n_classes=n_classes, IMG_HEIGHT=IMG_HEIGHT, IMG_WIDTH=IMG_WIDTH, IMG_CHANNELS=IMG_CHANNELS)
             # start training
             learning_rate = 0.0001  # Specify your desired learning rate
             model = get_model()        # initialize model
