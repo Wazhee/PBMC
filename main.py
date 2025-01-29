@@ -81,15 +81,9 @@ def train_unet():
             IMG_HEIGHT,IMG_WIDTH,IMG_CHANNELS = X_train.shape[1],X_train.shape[2],X_train.shape[3]
             def get_model():
                 return multi_unet_model(n_classes=n_classes, IMG_HEIGHT=IMG_HEIGHT, IMG_WIDTH=IMG_WIDTH, IMG_CHANNELS=IMG_CHANNELS)
-            # start training
-            scores, iou_list, acc_list = {},[],[]
-            # initialize model
             learning_rate = 0.0001  # Specify your desired learning rate
-            model = get_model()
+            model = get_model() # initialize model
             model.compile(optimizer=Adam(learning_rate=learning_rate), loss=LOSS, metrics=['accuracy', dice_score])
-    #         model = get_model()
-    #         model.compile(optimizer='adam', loss=LOSS, metrics=['accuracy'])  
-
             early_stopping = EarlyStopping(monitor='val_loss', patience=30, restore_best_weights=True) # implement early_stopping mechanism
             history = model.fit(X_train, y_train_cat, 
                                 batch_size = BATCHSIZE, 
@@ -100,7 +94,7 @@ def train_unet():
                                 #class_weight=class_weights,
                                 shuffle=True)
 
-            scores = performance_evaluation(model, X_test, y_test, n_classes, scores,idx,save_dir) # calculate results
+            scores = performance_evaluation(model, X_test, y_test, n_classes, {}, idx, save_dir) # calculate results
             # save results of K-fold validation
             create_csv(scores, idx, save_dir)
             # save model
